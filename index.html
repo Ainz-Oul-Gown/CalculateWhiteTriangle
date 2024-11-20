@@ -66,13 +66,16 @@
         #result p {
             margin-bottom: 8px;
         }
+        #chartContainer {
+            width: 600px;
+            height: 400px;
+        }
     </style>
-</head>
+    <script src="https://cdn.plot.ly/plotly-latest.min.js"></script> </head>
 <body>
 
-<h1>Калькулятор дохода</h1>
-
-<div class="container">
+    <h1>Калькулятор дохода</h1>
+    <div class="container">
     <label for="HTX">Курс HTX:</label>
     <input type="number" id="HTX" value="101.35"><br><br>
 
@@ -88,11 +91,14 @@
     <button onclick="calculate()">Рассчитать</button>
 </div>
 
+<div id="resultContainer"></div>
 
 <div id="result" class="container"></div>
 
-<script>
-    function calculate() {
+    
+
+    <script>
+        function calculate() {
         let HTX = parseFloat(document.getElementById("HTX").value);
         let gara = parseFloat(document.getElementById("gara").value);
         let comm = 6.68; // Фиксированное значение
@@ -111,6 +117,7 @@
         let resultDiv = document.getElementById("result");
         resultDiv.innerHTML = "";
 
+
         resultDiv.innerHTML += "<p>Сумма сделки: " + summa.toFixed(2) + " + " + (commG * 100).toFixed(2) + "% = " + prod.toFixed(2) + "</p>";
         resultDiv.innerHTML += "<p>Будет получено: " + prod.toFixed(2) + " / " + HTX.toFixed(2) + " = " + usdtHTX.toFixed(2) + "$ на HTX</p>";
         resultDiv.innerHTML += "<p>Будет зачислено: " + usdtHTX.toFixed(2) + "$ - 1$ = " + wallet.toFixed(2) + "$ на кошелек</p>";
@@ -118,7 +125,56 @@
         resultDiv.innerHTML += "<p>Будет получено: " + gar.toFixed(2) + "$ - (" + gar.toFixed(2) + "$ * " + (commGara * 100).toFixed(2) + "%) = " + tt.toFixed(2) + " рублей</p>";
         resultDiv.innerHTML += "<p>Прибыль за круг: " + tt.toFixed(2) + " - " + summa.toFixed(2) + " = " + dohod.toFixed(2) + " рублей</p>";
     }
-</script>
+
+         function calculateDiff() {
+            const summa = parseFloat(document.getElementById("summa").value);
+            const comm = 6.68;
+            const commGara = 0.0025;
+            const commGInput = parseFloat(document.getElementById("commG").value / 100);
+            const htx = parseFloat(document.getElementById("HTX").value); // Берем значение HTX из input
+
+
+            let gara = 0;
+            let diff = 0;
+
+            // Бинарный поиск для gara
+            let left = htx - 10; // Начинаем поиск немного ниже HTX
+            let right = htx + 10; // И заканчиваем немного выше
+            for (let j = 0; j < 50; j++) { // Увеличиваем количество итераций для большей точности
+                let mid = (left + right) / 2;
+                gara = mid;
+
+                const prod = summa + summa * commGInput;
+                const usdtHTX = prod / htx;
+                const wallet = usdtHTX - 1;
+                const gar = wallet - comm;
+                const tt = (gar - gar * commGara) * gara;
+                const profit = tt - summa;
+
+                if (profit > 0) {
+                    right = mid;
+                } else {
+                    left = mid;
+                }
+            }
+
+
+            diff = gara - htx;
+
+            let resultContainer = document.getElementById("resultContainer");
+            resultContainer.innerHTML = "<p>Примерная необходимая разница курсов: " + diff.toFixed(2) + "</p>";
+        }
+
+
+        document.getElementById('summa').addEventListener('input', calculateDiff);
+        document.getElementById('commG').addEventListener('input', calculateDiff);
+        document.getElementById('HTX').addEventListener('input', calculateDiff); // Добавляем HTX
+        document.getElementById('gara').addEventListener('input', calculate); // Поддержка расчета прибыли
+        document.getElementById('summa').addEventListener('input', calculate); // Поддержка расчета прибыли
+
+        calculateDiff();
+        calculate() // Для начального расчета прибыли
+    </script>
 
 </body>
 </html>
